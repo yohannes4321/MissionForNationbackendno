@@ -109,7 +109,7 @@ router.post("/accept-invite", async (req, res) => {
     }
 
     const hashed = await bcrypt.hash(password, 10);
-    const id = uuidv4();
+    id = uuidv4();
     const role = invResult.invitation.role;
     const region_id = invResult.invitation.region_id;
 
