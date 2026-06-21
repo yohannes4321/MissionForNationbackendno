@@ -322,6 +322,26 @@ router.put('/churches/:id', authRequired, requireRole('super', 'regional_admin')
   }
 });
 
+// Delete church by church UUID (super or owning regional_admin)
+router.delete('/churches/:id', authRequired, requireRole('super', 'regional_admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const existing = await getChurchById(id);
+    if (!existing) return res.status(404).json({ error: 'Church not found' });
+
+    if (req.user.role === 'regional_admin') {
+      const allowedRegion = await userCanPostToRegion(req.user.id, existing.region_id);
+      if (!allowedRegion) return res.status(403).json({ error: 'Forbidden for this region' });
+    }
+
+    await db.query('DELETE FROM churches WHERE id=$1', [id]);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Create blog item for homepage (super only)
 router.post('/blogs', authRequired, requireRole('super'), requireCloudinaryConfig, runMulter(anyUploadField), async (req, res) => {
   const { text, image_url: imageUrlFromBody, video_url: videoUrlFromBody, expires_in_days } = req.body;
