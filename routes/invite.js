@@ -60,26 +60,32 @@ router.post("/send", authRequired, requireRole("super"), async (req, res) => {
 
     const url = buildAcceptInviteUrl(token);
 
-    await sendMail({
-      to: email,
-      subject: "Invitation",
-      html: `
-        <p>Hello,</p>
-        <p>You are invited as <strong>${role}</strong> in region <strong>${regionName}</strong>.</p>
-        <p>
-          Accept your invitation:
-          <a href="${url}">${url}</a>
-        </p>
-        <p>This invitation expires in 7 days.</p>
-      `,
-      text: `You are invited as ${role} in region ${regionName}. Accept here: ${url}`,
-    });
+    try {
+      await sendMail({
+        to: email,
+        subject: "Invitation",
+        html: `
+          <p>Hello,</p>
+          <p>You are invited as <strong>${role}</strong> in region <strong>${regionName}</strong>.</p>
+          <p>
+            Accept your invitation:
+            <a href="${url}">${url}</a>
+          </p>
+          <p>This invitation expires in 7 days.</p>
+        `,
+        text: `You are invited as ${role} in region ${regionName}. Accept here: ${url}`,
+      });
+    } catch (emailErr) {
+      console.error("Failed to send email, but invite was created. URL:", url, "Error:", emailErr.message);
+      // We still return success but maybe indicate email failed
+    }
 
     return res.json({
       ok: true,
       token,
       region_id: regionId,
       region_name: regionName,
+      invitation_url: url
     });
   } catch (err) {
     console.error("Send invitation error:", err);
