@@ -13,20 +13,18 @@ process.on("uncaughtException", (err) => {
 const app = express();
 
 const helmet = require("helmet");
-app.use(helmet());
+// Disable crossOriginResourcePolicy to allow cross-origin API requests from frontends
+app.use(helmet({ crossOriginResourcePolicy: false }));
 
 app.use(bodyParser.json());
 const cors = require("cors");
 
-// Enable CORS securely for frontend origins
-const allowedOrigins = process.env.CORS_ORIGINS 
-  ? process.env.CORS_ORIGINS.split(',').map(o => o.trim())
-  : "*"; // Fallback if missing, but preferably should be configured
-
+// Allow all origins so both MFN and MFN-Admin-Frontend can connect from anywhere
+// (You can lock this down later using an array of allowed URLs)
 app.use(
   cors({
-    origin: allowedOrigins,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
