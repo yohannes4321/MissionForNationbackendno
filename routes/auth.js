@@ -7,7 +7,10 @@ const { v4: uuidv4 } = require("uuid");
 const { sendMail } = require("../utils/email");
 require("dotenv").config();
 
-const JWT_SECRET = process.env.JWT_SECRET || "secret";
+if (!process.env.JWT_SECRET) {
+  console.warn("WARNING: JWT_SECRET environment variable is missing!");
+}
+const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret_only_for_dev";
 
 async function getValidInvitation(token, email) {
   const inv = await db.query(
@@ -95,6 +98,15 @@ router.post("/accept-invite", async (req, res) => {
       id = existing.rows[0].id;
       const role = invResult.invitation.role;
       const region_id = invResult.invitation.region_id;
+
+      if (region_id) {
+        // Ensure the existing user is linked to the new region
+        await db.query(
+          "INSERT INTO user_regions(user_id, region_id) VALUES($1,$2) ON CONFLICT DO NOTHING",
+          [id, region_id]
+        );
+      }
+
       const authToken = jwt.sign(
         { id, email: invitationEmail, role },
         JWT_SECRET,

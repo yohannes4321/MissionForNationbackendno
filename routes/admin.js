@@ -396,8 +396,56 @@ router.get('/blogs', async (req, res) => {
     ORDER BY created_at ${isNewest ? 'DESC' : 'ASC'}
   `;
 
-  const r = await db.query(query, [search, includeExpired]);
   return res.json({ blogs: r.rows });
+});
+
+// Update blog item (super only)
+router.put('/blogs/:id', authRequired, requireRole('super'), async (req, res) => {
+  const { id } = req.params;
+  const { text, image_url, video_url, expires_in_days } = req.body;
+
+  try {
+    const existing = await db.query('SELECT * FROM blogs WHERE id=$1', [id]);
+    if (existing.rowCount !== 1) return res.status(404).json({ error: 'Blog not found' });
+
+    const expiresAt = expires_in_days !== undefined 
+      ? parseExpiryDate(expires_in_days) 
+      : existing.rows[0].expires_at;
+
+    await db.query(
+      `UPDATE blogs 
+       SET text = $1, image_url = $2, video_url = $3, expires_at = $4
+       WHERE id = $5`,
+      [
+        text !== undefined ? text : existing.rows[0].text,
+        image_url !== undefined ? image_url : existing.rows[0].image_url,
+        video_url !== undefined ? video_url : existing.rows[0].video_url,
+        expiresAt,
+        id
+      ]
+    );
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Delete blog item (super only)
+router.delete('/blogs/:id', authRequired, requireRole('super'), async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    const existing = await db.query('SELECT * FROM blogs WHERE id=$1', [id]);
+    if (existing.rowCount !== 1) return res.status(404).json({ error: 'Blog not found' });
+
+    await db.query('DELETE FROM blogs WHERE id=$1', [id]);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Server error' });
+  }
 });
 
 // Create post (super or regional admin)
