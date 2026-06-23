@@ -39,12 +39,14 @@ const authLimiter = rateLimit({
 const authRoutes = require("./routes/auth");
 const inviteRoutes = require("./routes/invite");
 const adminRoutes = require("./routes/admin");
+const blogRoutes = require("./routes/blogs");
 const uploadRoutes = require("./routes/upload");
 
 app.use("/auth", authLimiter, authRoutes);
 app.use("/api/auth", authLimiter, authRoutes);
 app.use("/invite", authLimiter, inviteRoutes);
 app.use("/api", adminRoutes);
+app.use("/api/blogs", blogRoutes);
 app.use("/api", uploadRoutes);
 
 // Backward-compatible alias for clients requesting galleries outside the /api prefix.
