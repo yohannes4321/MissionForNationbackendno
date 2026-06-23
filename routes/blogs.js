@@ -60,7 +60,11 @@ router.get('/', async (req, res) => {
     return res.json({ blogs: result.rows });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: 'Server error' });
+    return res.status(500).json({ error: 'Server error',
+    details: err.message,
+    hint: err.hint || 'Check database constraints'  
+     });
+
   }
 });
 
